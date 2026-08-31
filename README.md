@@ -1,6 +1,6 @@
 # ChatSync for OpenRouter
 
-A browser extension that syncs your [OpenRouter](https://openrouter.ai/chat) chat history across devices and browsers.
+A browser extension (Chrome / Edge / Firefox) that syncs your [OpenRouter](https://openrouter.ai/chat) chat history across devices and browsers.
 
 OpenRouter's chat playground is local-first: conversations live in your browser's IndexedDB with no server-side sync, and the only official tools are manual Export/Import JSON. ChatSync automates that: it watches the local database and merges every room into a remote backend you own, so any device pointing at the same backend converges to the same chat list.
 
@@ -32,11 +32,16 @@ openrouter.ai (content script)          your storage backend
 
 ```bash
 pnpm install
-pnpm build          # output in .output/chrome-mv3
-pnpm test           # sync engine unit tests
+pnpm zip:all                    # chrome + edge + firefox zips in .output/
+pnpm test                       # sync engine unit tests
 ```
 
-Then in Chrome: `chrome://extensions` → enable Developer mode → Load unpacked → select `.output/chrome-mv3`.
+Then load the unpacked build (`.output/chrome-mv3`, `.output/edge-mv3`, or `.output/firefox-mv3`):
+
+- **Chrome / Edge**: `chrome://extensions` (or `edge://extensions`) → enable Developer mode → Load unpacked
+- **Firefox** (128+): `about:debugging#/runtime/this-firefox` → Load Temporary Add-on → pick `.output/firefox-mv3/manifest.json`, or install the signed zip from releases
+
+Grab prebuilt zips from [releases](https://github.com/3metaJun/chatsync/releases).
 
 ## Usage
 

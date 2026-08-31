@@ -3,18 +3,33 @@ import { defineConfig } from 'wxt';
 
 export default defineConfig({
   srcDir: 'src',
-  manifest: {
+  // MV3 for every browser: Firefox 128+ fully supports it (event-page
+  // background + optional host permissions), and the WebDAV dynamic-origin
+  // flow needs optional_host_permissions.
+  manifestVersion: 3,
+  manifest: ({ browser }) => ({
     name: 'ChatSync for OpenRouter',
     description: 'Sync your OpenRouter chat history across devices and browsers.',
     permissions: ['storage', 'alarms'],
     host_permissions: [
       'https://openrouter.ai/*',
       'https://api.github.com/*',
-      'http://127.0.0.1/*',
-      'http://localhost/*',
+      ...(browser === 'firefox'
+        ? [] // Firefox MV3 grants host_permissions on demand at install
+        : ['http://127.0.0.1/*', 'http://localhost/*']),
     ],
     optional_host_permissions: ['https://*/*', 'http://*/*'],
-  },
+    ...(browser === 'firefox'
+      ? {
+          browser_specific_settings: {
+            gecko: {
+              id: 'chatsync@3metajun.dev',
+              strict_min_version: '128.0',
+            },
+          },
+        }
+      : {}),
+  }),
   vite: () => ({
     plugins: [tailwindcss()],
   }),

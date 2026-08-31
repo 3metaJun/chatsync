@@ -1,13 +1,16 @@
 {
   "name": "chatsync",
   "description": "Sync OpenRouter chat history across devices and browsers",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "wxt",
     "build": "wxt build",
+    "build:firefox": "wxt build -b firefox",
+    "build:edge": "wxt build -b edge",
     "zip": "wxt zip",
+    "zip:all": "wxt zip && wxt zip -b firefox && wxt zip -b edge",
     "compile": "tsc --noEmit",
     "test": "vitest run",
     "postinstall": "wxt prepare"
