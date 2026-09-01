@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
-import type { BgRequest, BgStatus } from '@/lib/messaging';
+import type { BgStatus } from '@/lib/messaging';
 import type { SyncReport } from '@/lib/types';
+import { sendMessage } from '@/lib/webext';
 
 type RunState =
   | { phase: 'idle' }
@@ -8,9 +9,8 @@ type RunState =
   | { phase: 'done'; report: SyncReport }
   | { phase: 'error'; message: string };
 
-function send<T>(msg: BgRequest): Promise<T> {
-  return chrome.runtime.sendMessage(msg);
-}
+/** sendMessage with a hard timeout + rejection so UI never hangs forever. */
+const send = sendMessage;
 
 function relTime(iso: string | null): string {
   if (!iso) return 'never';

@@ -15,7 +15,25 @@ import { PLAYGROUND_DB as DB, PLAYGROUND_STORE as STORE } from './types';
 function openDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const req = indexedDB.open(DB);
-    req.onsuccess = () => resolve(req.result);
+    req.onsuccess = () => {
+      const db = req.result;
+      if (db.objectStoreNames.contains(STORE)) {
+        resolve(db);
+        return;
+      }
+      // Fresh/empty database (e.g. logged-out profile): the store only gets
+      // created inside a versionchange upgrade — bump the version once.
+      const version = db.version;
+      db.close();
+      const up = indexedDB.open(DB, version + 1);
+      up.onupgradeneeded = () => {
+        if (!up.result.objectStoreNames.contains(STORE)) {
+          up.result.createObjectStore(STORE);
+        }
+      };
+      up.onsuccess = () => resolve(up.result);
+      up.onerror = () => reject(up.error ?? new Error('failed to upgrade ' + DB));
+    };
     req.onerror = () => reject(req.error ?? new Error('failed to open ' + DB));
   });
 }

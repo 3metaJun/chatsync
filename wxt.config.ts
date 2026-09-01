@@ -14,9 +14,10 @@ export default defineConfig({
     host_permissions: [
       'https://openrouter.ai/*',
       'https://api.github.com/*',
-      ...(browser === 'firefox'
-        ? [] // Firefox MV3 grants host_permissions on demand at install
-        : ['http://127.0.0.1/*', 'http://localhost/*']),
+      // localhost entry covers self-hosted/loopback WebDAV. Firefox treats
+      // match-pattern hosts as port-agnostic, same as Chrome.
+      'http://127.0.0.1/*',
+      'http://localhost/*',
     ],
     optional_host_permissions: ['https://*/*', 'http://*/*'],
     ...(browser === 'firefox'

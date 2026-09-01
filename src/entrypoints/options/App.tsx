@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import type { AppSettings, BgRequest, SettingsPatch } from '@/lib/messaging';
+import type { AppSettings, SettingsPatch } from '@/lib/messaging';
+import { permissionsRequest, sendMessage } from '@/lib/webext';
 
 type TestState =
   | { phase: 'idle' }
@@ -8,6 +9,9 @@ type TestState =
   | { phase: 'fail'; error: string };
 
 type SaveState = { phase: 'idle' } | { phase: 'saving' } | { phase: 'saved' };
+
+/** sendMessage with a hard timeout + rejection so UI never hangs forever. */
+const send = sendMessage;
 
 function Field({
   label,
@@ -42,14 +46,15 @@ function Field({
 
 export default function App() {
   const [settings, setSettings] = useState<AppSettings | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [test, setTest] = useState<TestState>({ phase: 'idle' });
   const [save, setSave] = useState<SaveState>({ phase: 'idle' });
 
   useEffect(() => {
-    void chrome.runtime
-      .sendMessage({ type: 'settings:get' } satisfies BgRequest)
-      .then((r: { ok: boolean; settings: AppSettings }) =>
-        setSettings(r.settings),
+    send<{ ok: boolean; settings: AppSettings }>({ type: 'settings:get' })
+      .then((r) => setSettings(r.settings))
+      .catch((e: unknown) =>
+        setLoadError(e instanceof Error ? e.message : String(e)),
       );
   }, []);
 
@@ -71,43 +76,76 @@ export default function App() {
   const persist = useCallback(async () => {
     if (!settings) return;
     setSave({ phase: 'saving' });
-    // WebDAV origin permission needs a user gesture: request it here.
+    // permissions.request() must be called synchronously inside the click
+    // handler (before any await) or the browser rejects it as gesture-less.
+    // It is idempotent: already-granted origins resolve true silently.
     if (settings.backend === 'webdav' && settings.webdav.url) {
       try {
         const origin = new URL(settings.webdav.url).origin + '/*';
-        const has = await chrome.permissions.contains({ origins: [origin] });
-        if (!has) await chrome.permissions.request({ origins: [origin] });
-      } catch {
-        /* user may decline; backend will surface the error on sync */
+        const granted = await permissionsRequest({ origins: [origin] });
+        if (!granted) {
+          setTest({
+            phase: 'fail',
+            error: `Host permission for ${origin} was not granted. Allow it when the browser asks, or enable it in the extension's Permissions page.`,
+          });
+          return;
+        }
+      } catch (e) {
+        setTest({
+          phase: 'fail',
+          error: `Permission request failed: ${e instanceof Error ? e.message : String(e)}`,
+        });
+        return;
       }
     }
-    await chrome.runtime.sendMessage({
-      type: 'settings:set',
-      patch: settings,
-    } satisfies BgRequest);
-    setSave({ phase: 'saved' });
+    try {
+      await send({ type: 'settings:set', patch: settings });
+      setSave({ phase: 'saved' });
+    } catch (e) {
+      setTest({
+        phase: 'fail',
+        error: e instanceof Error ? e.message : String(e),
+      });
+    }
   }, [settings]);
 
   const runTest = useCallback(async () => {
     if (!settings) return;
     await persist();
     setTest({ phase: 'testing' });
-    const res = (await chrome.runtime.sendMessage({
-      type: 'adapter:test',
-    } satisfies BgRequest)) as {
-      ok: boolean;
-      result?: { ok: boolean; detail?: string; error?: string };
-      error?: string;
-    };
-    if (res.ok && res.result?.ok) {
-      setTest({ phase: 'ok', detail: res.result.detail ?? '' });
-    } else {
+    try {
+      const res = await send<{
+        ok: boolean;
+        result?: { ok: boolean; detail?: string; error?: string };
+        error?: string;
+      }>({ type: 'adapter:test' });
+      if (res.ok && res.result?.ok) {
+        setTest({ phase: 'ok', detail: res.result.detail ?? '' });
+      } else {
+        setTest({
+          phase: 'fail',
+          error: res.result?.error ?? res.error ?? 'test failed',
+        });
+      }
+    } catch (e) {
       setTest({
         phase: 'fail',
-        error: res.result?.error ?? res.error ?? 'test failed',
+        error: e instanceof Error ? e.message : String(e),
       });
     }
   }, [settings, persist]);
+
+  if (loadError) {
+    return (
+      <div className="p-6 text-sm">
+        <p className="font-mono text-xs text-red-400">background error: {loadError}</p>
+        <p className="mt-2 text-xs text-neutral-500">
+          The options page could not reach the extension background. Try
+          reloading the extension, then reopen this page.
+        </p>
+      </div>
+    );
+  }
 
   if (!settings) {
     return <div className="p-6 text-sm text-neutral-500">loading…</div>;
