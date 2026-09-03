@@ -86,7 +86,7 @@ export default function App() {
         if (!granted) {
           setTest({
             phase: 'fail',
-            error: `Host permission for ${origin} was not granted. Allow it when the browser asks, or enable it in the extension's Permissions page.`,
+            error: `Host permission for ${origin} was not granted. Allow it when the browser asks; on Android, enable it in the add-on's Permissions page (Add-ons manager > ChatSync > Permissions).`,
           });
           return;
         }

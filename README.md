@@ -38,10 +38,13 @@ pnpm test                       # sync engine unit tests
 
 Then load the unpacked build (`.output/chrome-mv3`, `.output/edge-mv3`, or `.output/firefox-mv3`):
 
-- **Chrome / Edge**: `chrome://extensions` (or `edge://extensions`) → enable Developer mode → Load unpacked
-- **Firefox** (128+): `about:debugging#/runtime/this-firefox` → Load Temporary Add-on → pick `.output/firefox-mv3/manifest.json`, or install the signed zip from releases
+- **Chrome / Edge** (desktop): `chrome://extensions` (or `edge://extensions`) → enable Developer mode → Load unpacked
+- **Firefox 128+** (desktop): `about:debugging#/runtime/this-firefox` → Load Temporary Add-on → pick `.output/firefox-mv3/manifest.json`, or install the signed zip from releases
+- **Firefox Android 128+**: install from [addons.mozilla.org](https://addons.mozilla.org) once published (the same package as desktop). During development: enable USB debugging on the phone, connect `adb`, then `npx web-ext run -t firefox-android -s .output/firefox-mv3`
 
 Grab prebuilt zips from [releases](https://github.com/3metaJun/chatsync/releases).
+
+> Android notes: Edge/Chrome on Android have no third-party extension runtime, so Firefox Android is the only supported mobile target. Sync opens an openrouter.ai tab in the foreground for a few seconds while it runs; local `127.0.0.1` WebDAV URLs point at the phone itself, so use a LAN/hosted WebDAV URL instead.
 
 ## Usage
 

@@ -72,7 +72,7 @@ async function buildAdapter(settings: AppSettings): Promise<SyncAdapter> {
     const granted = await permissionsContains({ origins: [origin] });
     if (!granted) {
       throw new Error(
-        `Missing host permission for ${origin}. Re-save settings to grant it.`,
+        `Missing host permission for ${origin}. Re-save settings to grant it; on Android, toggle it in the add-on's Permissions page (Add-ons manager > ChatSync > Permissions).`,
       );
     }
     return new WebdavAdapter({ url, username, password });
