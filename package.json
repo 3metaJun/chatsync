@@ -12,6 +12,7 @@
     "zip": "wxt zip",
     "zip:all": "wxt zip && wxt zip -b firefox && wxt zip -b edge",
     "compile": "tsc --noEmit",
+    "typecheck:tsrs": "bash .github/scripts/tsrs-trial.sh",
     "test": "vitest run",
     "postinstall": "wxt prepare"
   },
@@ -25,7 +26,9 @@
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
     "tailwindcss": "^4.1.0",
+    "tsrs": "0.18.0-ts7.1.0-dev.20260929",
     "typescript": "^5.8.0",
+    "vite": "^8.2.2",
     "vitest": "^4.1.11",
     "wxt": "^0.20.0"
   }

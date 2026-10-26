@@ -1,0 +1,32 @@
+name: tsrs trial
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  tsrs:
+    # Shadow check; keep non-blocking and off the required-check list.
+    # Park this trial until tsrs ships a stable (non-dev) release.
+    name: tsrs trial
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          check-latest: true
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Typecheck with tsrs
+        continue-on-error: true
+        run: bash .github/scripts/tsrs-trial.sh
